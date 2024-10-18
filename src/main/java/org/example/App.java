@@ -48,7 +48,6 @@ public class App {
                     } catch (Exception e) {
                         logger.severe(e.getMessage());
                     }
-
                 }
 
                 point = new Point(keyValue.get("xType"), keyValue.get("yType"), keyValue.get("RType"));
@@ -61,12 +60,8 @@ public class App {
 
             String content = "пустой ответик";
             if (point != null) {
-//                content = format(Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"scriptTime\":%f}",
-//                        point.getX(),
-//                        point.getY(),
-//                        point.getR(),
-//                        point.isHit(),
-//                        ((new Date()).getTime() - point.getStartTime().getTime()) / 10e6);  //  наносекунды
+                var scriptTime = (new Date()).getTime() - point.getStartTime().getTime();
+                logger.info("" + scriptTime);
 
                 content = format(
                         Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"currentTime\":\"%s\",\"scriptTime\":\"%d\"}",
@@ -75,7 +70,7 @@ public class App {
                         point.getR(),
                         point.isHit(),
                         sdf.format(point.getStartTime()),
-                        Math.round((double) ((new Date()).getTime() - point.getStartTime().getTime()) / 10e3)
+                        scriptTime
                 );
             }
 
