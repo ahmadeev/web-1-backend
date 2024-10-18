@@ -51,7 +51,7 @@ public class App {
 
             System.out.println(httpResponse);
 
-            logger.info("\n-------------------ОТВЕТ:\n" + httpResponse + "\n-------------------------");
+            logger.info("\n---------------------ОТВЕТ:\n" + httpResponse + "-------------------------");
         }
     }
 }
