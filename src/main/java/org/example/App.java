@@ -61,12 +61,22 @@ public class App {
 
             String content = "пустой ответик";
             if (point != null) {
-                content = format(Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"scriptTime\":%f}",
+//                content = format(Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"scriptTime\":%f}",
+//                        point.getX(),
+//                        point.getY(),
+//                        point.getR(),
+//                        point.isHit(),
+//                        ((new Date()).getTime() - point.getStartTime().getTime()) / 10e6);  //  наносекунды
+
+                content = format(
+                        Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"currentTime\":\"%s\",\"scriptTime\":\"%d\"}",
                         point.getX(),
                         point.getY(),
                         point.getR(),
                         point.isHit(),
-                        ((new Date()).getTime() - point.getStartTime().getTime()) / 10e6);  //  наносекунды
+                        sdf.format(point.getStartTime()),
+                        Math.round((double) ((new Date()).getTime() - point.getStartTime().getTime()) / 10e3)
+                );
             }
 
             String httpResponse = """
