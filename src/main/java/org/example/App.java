@@ -6,12 +6,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Locale;
 
 import static java.lang.String.format;
 
@@ -20,14 +17,23 @@ public class App {
     public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
     public static FCGIInterface fcgiInterface = new FCGIInterface();
 
+    public static ArrayList<Double> validX = new ArrayList<>(Arrays.asList(-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0));
+    public static ArrayList<Double> validR = new ArrayList<>(Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0));
+
+    public static double lowValidY = -3;
+    public static double highValidY = 3;
+
     public App() {
         logger.setLevel(Level.ALL);
     }
 
-//    public static boolean isPointValid(Point point) {
-//        if (point == null) return false;
-//        return false;
-//    }
+    public static boolean isInputValid(HashMap<String, Double> parsedStringByKeyValue) {
+        double x = parsedStringByKeyValue.get("xType");
+        double y = parsedStringByKeyValue.get("yType");
+        double R = parsedStringByKeyValue.get("RType");
+
+        return validX.contains(x) && validR.contains(R) && y >= lowValidY && y <= highValidY;
+    }
 
     public static String getOKResponse(String content) {
         return """
@@ -121,6 +127,10 @@ public class App {
 
                 if (parsedStringByKeyValue == null) {
                     throw new Exception("Разобранная строка null!");
+                }
+
+                if (!isInputValid(parsedStringByKeyValue)) {
+                    throw new Exception("Невалидные введенные значения!");
                 }
 
                 point = new Point(
