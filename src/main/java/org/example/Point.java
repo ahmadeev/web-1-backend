@@ -18,6 +18,14 @@ public class Point {
     }
 
     private boolean isHit(double x, double y, double r) {
+        if (x >= 0 && y >= 0 && x * x + y * y <= (r / 2) * (r / 2)) return true;
+
+        if (x >= 0 && y <= 0 && 2 * x - r <= y) return true;
+
+        if (x <= 0 && y >= 0) return false;
+
+        if (x <= 0 && y <= 0 && x >= -r && y >= -r / 2) return true;
+
         return false;
     }
 

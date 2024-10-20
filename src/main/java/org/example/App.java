@@ -15,6 +15,23 @@ import static java.lang.String.format;
 
 public class App {
 
+//    public static boolean isPointValid(Point point) {
+//        if (point == null) return false;
+//        double x = point.getX();
+//        double y = point.getY();
+//        double r = point.getR();
+//
+//        if (x >= 0 && y >= 0 && x * x + y * y <= (r / 2) * (r / 2)) return true;
+//
+//        if (x >= 0 && y <= 0 && 2 * x - r <= y) return true;
+//
+//        if (x <= 0 && y >= 0) return false;
+//
+//        if (x <= 0 && y <= 0 && x >= -r && y >= -r / 2) return true;
+//
+//        return false;
+//    }
+
     public static void main(String[] args) {
         Logger logger = Logger.getLogger("org.example");
         logger.setLevel(Level.ALL);
@@ -61,7 +78,7 @@ public class App {
             String content = "пустой ответик";
             if (point != null) {
                 var scriptTime = (new Date()).getTime() - point.getStartTime().getTime();
-                logger.info("" + scriptTime);
+                logger.info("Валидация прошла успешно, время работы сценария: " + scriptTime);
 
                 content = format(
                         Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"currentTime\":\"%s\",\"scriptTime\":\"%d\"}",
