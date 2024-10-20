@@ -2,6 +2,8 @@ package org.example;
 
 import com.fastcgi.FCGIInterface;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -16,6 +18,7 @@ import static java.lang.String.format;
 public class App {
     public static Logger logger = Logger.getLogger("org.example");
     public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    public static FCGIInterface fcgiInterface = new FCGIInterface();
 
     public App() {
         logger.setLevel(Level.ALL);
@@ -50,7 +53,7 @@ public class App {
         for (int i = 0; i < queryStringArray.length; i++) {
             var temp = queryStringArray[i].split("=");
             try {
-                parsedStringByKeyValue.put(temp[0], Double.parseDouble(temp[1]));
+                parsedStringByKeyValue.put(temp[0], Double.parseDouble(temp[1].replace(",", ".")));
             } catch (Exception e) {
                 logger.severe(e.getMessage());
             }
@@ -58,11 +61,23 @@ public class App {
         return parsedStringByKeyValue;
     }
 
+    public static String readRequestBody() throws IOException {
+        FCGIInterface.request.inStream.fill();
+        var contentLength = FCGIInterface.request.inStream.available();
+        var buffer = ByteBuffer.allocate(contentLength);
+        var readBytes =
+                FCGIInterface.request.inStream.read(buffer.array(), 0,
+                        contentLength);
+        var requestBodyRaw = new byte[readBytes];
+        buffer.get(requestBodyRaw);
+        buffer.clear();
+        String requestBody = new String(requestBodyRaw, StandardCharsets.UTF_8);
+        logger.info(requestBody);
+        return requestBody;
+    }
 
     public static void main(String[] args) {
         logger.info("Модуль App был запущен.");
-
-        FCGIInterface fcgiInterface = new FCGIInterface();
 
         while (true) {
             int result = fcgiInterface.FCGIaccept();
@@ -75,16 +90,37 @@ public class App {
             try {
                 logger.info("Начало парсинга строки запроса.");
 
-                //--------------get
-                Properties params = FCGIInterface.request.params;
-                String queryString = params.getProperty("QUERY_STRING");
+                HashMap<String, Double> parsedStringByKeyValue = null;
 
-                if (queryString == null) {
-                    throw new Exception("Строка запроса null!");
+                Properties params = FCGIInterface.request.params;
+
+                if (params.getProperty("REQUEST_METHOD").equals("GET")) {
+                    logger.info("Обрабатывается GET-запрос");
+                    //--------------get
+                    String queryString = params.getProperty("QUERY_STRING");
+
+                    if (queryString == null) {
+                        throw new Exception("Строка запроса null!");
+                    }
+
+                    parsedStringByKeyValue = parseQueryString(queryString);
+                    //------------------
+                } else if (params.getProperty("REQUEST_METHOD").equals("POST")) {
+                    logger.info("Обрабатывается POST-запрос");
+                    //--------------post
+                    String queryString = readRequestBody();
+
+                    if (queryString == null) {
+                        throw new Exception("Строка запроса null!");
+                    }
+
+                    parsedStringByKeyValue = parseQueryString(queryString);
+                    //------------------
                 }
 
-                HashMap<String, Double> parsedStringByKeyValue = parseQueryString(queryString);
-                //------------------
+                if (parsedStringByKeyValue == null) {
+                    throw new Exception("Разобранная строка null!");
+                }
 
                 point = new Point(
                         parsedStringByKeyValue.get("xType"),
