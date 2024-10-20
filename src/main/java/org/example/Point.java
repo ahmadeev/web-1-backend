@@ -22,8 +22,6 @@ public class Point {
 
         if (x >= 0 && y <= 0 && 2 * x - r <= y) return true;
 
-        if (x <= 0 && y >= 0) return false;
-
         if (x <= 0 && y <= 0 && x >= -r && y >= -r / 2) return true;
 
         return false;
