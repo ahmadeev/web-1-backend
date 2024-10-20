@@ -14,30 +14,53 @@ import java.util.Locale;
 import static java.lang.String.format;
 
 public class App {
+    public static Logger logger = Logger.getLogger("org.example");
+    public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+
+    public App() {
+        logger.setLevel(Level.ALL);
+    }
 
 //    public static boolean isPointValid(Point point) {
 //        if (point == null) return false;
-//        double x = point.getX();
-//        double y = point.getY();
-//        double r = point.getR();
-//
-//        if (x >= 0 && y >= 0 && x * x + y * y <= (r / 2) * (r / 2)) return true;
-//
-//        if (x >= 0 && y <= 0 && 2 * x - r <= y) return true;
-//
-//        if (x <= 0 && y >= 0) return false;
-//
-//        if (x <= 0 && y <= 0 && x >= -r && y >= -r / 2) return true;
-//
 //        return false;
 //    }
 
-    public static void main(String[] args) {
-        Logger logger = Logger.getLogger("org.example");
-        logger.setLevel(Level.ALL);
-        logger.info("Модуль App был запущен.");
+    public static String getOKResponse(String content) {
+        return """
+                HTTP/1.1 200 OK
+                Content-Type: text/html
+                Content-Length: %d
+                \r\n\r\n%s
+            """.formatted(content.getBytes(StandardCharsets.UTF_8).length, content);
+    }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    public static String getBadRequestErrorResponse() {
+        return """
+                HTTP/2 400 Bad Request
+                Content-Type: text/html
+                Content-Length: %d
+                \r\n\r\n%s
+            """.formatted("Invalid data types".getBytes(StandardCharsets.UTF_8).length, "Invalid data types");
+    }
+
+    public static HashMap<String, Double> parseQueryString(String queryString) {
+        String[] queryStringArray = queryString.split("&");
+        HashMap<String, Double> parsedStringByKeyValue = new HashMap<>();
+        for (int i = 0; i < queryStringArray.length; i++) {
+            var temp = queryStringArray[i].split("=");
+            try {
+                parsedStringByKeyValue.put(temp[0], Double.parseDouble(temp[1]));
+            } catch (Exception e) {
+                logger.severe(e.getMessage());
+            }
+        }
+        return parsedStringByKeyValue;
+    }
+
+
+    public static void main(String[] args) {
+        logger.info("Модуль App был запущен.");
 
         FCGIInterface fcgiInterface = new FCGIInterface();
 
@@ -48,39 +71,36 @@ public class App {
                 break;
             }
 
-            String request = "Пустой ответ";
             Point point = null;
             try {
                 logger.info("Начало парсинга строки запроса.");
+
+                //--------------get
                 Properties params = FCGIInterface.request.params;
                 String queryString = params.getProperty("QUERY_STRING");
-                request = queryString == null ? request + ", не была передана строка запроса" : queryString;
 
-                String[] parsedString = request.split("&");
-                HashMap<String, Double> keyValue = new HashMap<>();
-                for (int i = 0; i < parsedString.length; i++) {
-                    var temp = parsedString[i].split("=");
-                    try {
-                        keyValue.put(temp[0], Double.parseDouble(temp[1]));
-                    } catch (Exception e) {
-                        logger.severe(e.getMessage());
-                    }
+                if (queryString == null) {
+                    throw new Exception("Строка запроса null!");
                 }
 
-                point = new Point(keyValue.get("xType"), keyValue.get("yType"), keyValue.get("RType"));
+                HashMap<String, Double> parsedStringByKeyValue = parseQueryString(queryString);
+                //------------------
+
+                point = new Point(
+                        parsedStringByKeyValue.get("xType"),
+                        parsedStringByKeyValue.get("yType"),
+                        parsedStringByKeyValue.get("RType")
+                );
 
                 logger.info("Конец парсинга строки запроса.");
             } catch (Exception e) {
-                request = "Произошла ошибка при парсинге строки запроса: \n" + e.getMessage();
-                logger.log(Level.SEVERE, "Произошла ошибка", e);
+                logger.log(Level.SEVERE, "Произошла ошибка: ", e);
             }
 
-            String content = "пустой ответик";
+            String httpResponse;
             if (point != null) {
                 var scriptTime = (new Date()).getTime() - point.getStartTime().getTime();
-                logger.info("Валидация прошла успешно, время работы сценария: " + scriptTime);
-
-                content = format(
+                String content = format(
                         Locale.ENGLISH, "{\"x\":%f,\"y\":%f,\"R\":%f,\"isHit\":%b,\"currentTime\":\"%s\",\"scriptTime\":\"%d\"}",
                         point.getX(),
                         point.getY(),
@@ -89,20 +109,18 @@ public class App {
                         sdf.format(point.getStartTime()),
                         scriptTime
                 );
+                logger.info("Валидация прошла успешно, время работы сценария: " + scriptTime);
+                httpResponse = getOKResponse(content);
+
+            } else {
+                logger.info("Запрос не прошел валидацию.");
+                httpResponse = getBadRequestErrorResponse();
             }
 
-            String httpResponse = """
-                HTTP/1.1 200 OK
-                Content-Type: text/html
-                Content-Length: %d
-                \r\n\r\n%s
-            """.formatted(content.getBytes(StandardCharsets.UTF_8).length, content);
-
             logger.info("Строка ответа собрана.");
-
             System.out.println(httpResponse);
-
             logger.info("\n---------------------ОТВЕТ:\n" + httpResponse + "-------------------------");
+
         }
     }
 }
