@@ -56,8 +56,19 @@ public class App {
                 parsedStringByKeyValue.put(temp[0], Double.parseDouble(temp[1].replace(",", ".")));
             } catch (Exception e) {
                 logger.severe(e.getMessage());
+                //  в этом блоке можно добавлять весь ответ целиком
+                //  для валидации: проверка на длину запроса, проверка на наличие x, y, r
+                parsedStringByKeyValue.put(temp[0], null);
             }
         }
+
+        if (parsedStringByKeyValue.size() != 3
+                || parsedStringByKeyValue.get("xType") == null
+                || parsedStringByKeyValue.get("yType") == null
+                || parsedStringByKeyValue.get("RType") == null) {
+            return null;
+        }
+
         return parsedStringByKeyValue;
     }
 
@@ -93,30 +104,20 @@ public class App {
                 HashMap<String, Double> parsedStringByKeyValue = null;
 
                 Properties params = FCGIInterface.request.params;
-
+                String queryString = null;
                 if (params.getProperty("REQUEST_METHOD").equals("GET")) {
                     logger.info("Обрабатывается GET-запрос");
-                    //--------------get
-                    String queryString = params.getProperty("QUERY_STRING");
-
-                    if (queryString == null) {
-                        throw new Exception("Строка запроса null!");
-                    }
-
-                    parsedStringByKeyValue = parseQueryString(queryString);
-                    //------------------
+                    queryString = params.getProperty("QUERY_STRING");
                 } else if (params.getProperty("REQUEST_METHOD").equals("POST")) {
                     logger.info("Обрабатывается POST-запрос");
-                    //--------------post
-                    String queryString = readRequestBody();
-
-                    if (queryString == null) {
-                        throw new Exception("Строка запроса null!");
-                    }
-
-                    parsedStringByKeyValue = parseQueryString(queryString);
-                    //------------------
+                    queryString = readRequestBody();
                 }
+
+                if (queryString == null) {
+                    throw new Exception("Строка запроса null!");
+                }
+
+                parsedStringByKeyValue = parseQueryString(queryString);
 
                 if (parsedStringByKeyValue == null) {
                     throw new Exception("Разобранная строка null!");
@@ -145,7 +146,7 @@ public class App {
                         sdf.format(point.getStartTime()),
                         scriptTime
                 );
-                logger.info("Валидация прошла успешно, время работы сценария: " + scriptTime);
+                logger.info("Валидация прошла успешно, время работы сценария: " + scriptTime + " ms");
                 httpResponse = getOKResponse(content);
 
             } else {
@@ -156,7 +157,6 @@ public class App {
             logger.info("Строка ответа собрана.");
             System.out.println(httpResponse);
             logger.info("\n---------------------ОТВЕТ:\n" + httpResponse + "-------------------------");
-
         }
     }
 }
